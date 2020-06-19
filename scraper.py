@@ -64,77 +64,34 @@ def _extract_shares(item):
 
 
 def _extract_comments(item):
-    postComments = item.find_all(attrs={"aria-label": "Comment"})
+    postComments = item.find_all(attrs={"aria-label": ["Comment", "Comment reply"]})
     comments = dict()
+    counter = 1
     # print(postDict)
     for comment in postComments:
         if comment.find(class_="_6qw4") is None:
             continue
 
         commenter = comment.find(class_="_6qw4").text
-        comments[commenter] = dict()
+        comments[counter] = dict()
 
         comment_text = comment.find("span", class_="_3l3x")
+		
+        if commenter is not None:
+            comments[counter]["commenter"] = commenter
 
         if comment_text is not None:
-            comments[commenter]["text"] = comment_text.text
+            comments[counter]["text"] = comment_text.text
 
         comment_link = comment.find(class_="_ns_")
         if comment_link is not None:
-            comments[commenter]["link"] = comment_link.get("href")
+            comments[counter]["link"] = comment_link.get("href")
 
         comment_pic = comment.find(class_="_2txe")
         if comment_pic is not None:
-            comments[commenter]["image"] = comment_pic.find(class_="img").get("src")
+            comments[counter]["image"] = comment_pic.find(class_="img").get("src")
 
-        commentList = item.find('ul', {'class': '_7791'})
-        if commentList:
-            comments = dict()
-            comment = commentList.find_all('li')
-            if comment:
-                for litag in comment:
-                    aria = litag.find(attrs={"aria-label": "Comment"})
-                    if aria:
-                        commenter = aria.find(class_="_6qw4").text
-                        comments[commenter] = dict()
-                        comment_text = litag.find("span", class_="_3l3x")
-                        if comment_text:
-                            comments[commenter]["text"] = comment_text.text
-                            # print(str(litag)+"\n")
-
-                        comment_link = litag.find(class_="_ns_")
-                        if comment_link is not None:
-                            comments[commenter]["link"] = comment_link.get("href")
-
-                        comment_pic = litag.find(class_="_2txe")
-                        if comment_pic is not None:
-                            comments[commenter]["image"] = comment_pic.find(class_="img").get("src")
-
-                        repliesList = litag.find(class_="_2h2j")
-                        if repliesList:
-                            reply = repliesList.find_all('li')
-                            if reply:
-                                comments[commenter]['reply'] = dict()
-                                for litag2 in reply:
-                                    aria2 = litag2.find(attrs={"aria-label": "Comment reply"})
-                                    if aria2:
-                                        replier = aria2.find(class_="_6qw4").text
-                                        if replier:
-                                            comments[commenter]['reply'][replier] = dict()
-
-                                            reply_text = litag2.find("span", class_="_3l3x")
-                                            if reply_text:
-                                                comments[commenter]['reply'][replier][
-                                                    "reply_text"] = reply_text.text
-
-                                            r_link = litag2.find(class_="_ns_")
-                                            if r_link is not None:
-                                                comments[commenter]['reply']["link"] = r_link.get("href")
-
-                                            r_pic = litag2.find(class_="_2txe")
-                                            if r_pic is not None:
-                                                comments[commenter]['reply']["image"] = r_pic.find(
-                                                    class_="img").get("src")
+        counter = counter + 1
     return comments
 
 
@@ -265,8 +222,8 @@ def extract(page, numOfPost, infinite_scroll=False, scrape_comment=False):
 
     if scrape_comment:
 
-        moreComments = browser.find_elements_by_xpath('//a[@class="_4sxc _42ft"]')
-        print("Scrolling through to click on more comments")
+        moreComments = browser.find_elements_by_xpath('//a[@class="_4sxc _42ft"or@class="_4sxc _42ft FH"or@class="_5v47 fss"or@class="_4sxc _42ft"]')
+        print("Scrolling through to click on 'more comments', 'more...' and 'show comment reply'")  
         while len(moreComments) != 0:
             for moreComment in moreComments:
                 action = webdriver.common.action_chains.ActionChains(browser)
@@ -279,7 +236,7 @@ def extract(page, numOfPost, infinite_scroll=False, scrape_comment=False):
                     # do nothing right here
                     pass
 
-            moreComments = browser.find_elements_by_xpath('//a[@class="_4sxc _42ft"]')
+            moreComments = browser.find_elements_by_xpath('//a[@class="_4sxc _42ft"or@class="_4sxc _42ft FH"or@class="_5v47 fss"or@class="_4sxc _42ft"]')
 
     # Now that the page is fully scrolled, grab the source code.
     source_data = browser.page_source
